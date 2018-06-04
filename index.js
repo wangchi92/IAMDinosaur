@@ -1,46 +1,77 @@
 var robot = require('robotjs');
 
-var GameManipulator = require('./GameManipulator');
-var Learner = require('./Learner');
-var Scanner = require('./Scanner');
-var UI = require('./UI');
+var readline = require('readline');
+var rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  terminal: false
+});
 
+main();
 
-// Configure Robotjs
-robot.setMouseDelay(1);
-
-
-// Initialize Game
-GameManipulator.findGamePosition();
-
-
-// Check for found game
-if (GameManipulator.offset) {
-  // Uncomment this line to debug the
-  // starting point of sensor (Check if it's detecting it correcly)
-
-  // robot.moveMouse(GameManipulator.offset[0]+GameManipulator.sensors[0].offset[0],
-  //    GameManipulator.offset[1] + GameManipulator.sensors[0].offset[1]);
-
-  robot.moveMouse(GameManipulator.offset[0], GameManipulator.offset[1]);
-} else {
-  console.error('FAILED TO FIND GAME!');
-  process.exit();
+function main() {
+  var screenSize = robot.getScreenSize();
+  var dinoCoords = [screenSize.width / 2, screenSize.height / 2];
+  console.log(`Your screen size is ${screenSize.width} by ${screenSize.height}`);
+  getCoords(dinoCoords);
 }
 
+function getCoords(dinoCoords) {
+  robot.moveMouseSmooth(dinoCoords[0], dinoCoords[1]);
+  rl.question('Please estimate the coordinates of the Dino x,y: (enter "ok" when done)\n', function (input) {
+    if (input === 'ok') {
+      start(dinoCoords);
+    } else {
+      let coords = input.split(/,+ *| +,*/);
+      dinoCoords = coords;
+      getCoords(dinoCoords);
+    }
+  })
+}
 
-// Initialize UI
-UI.init(GameManipulator, Learner);
+function start(dinoCoords) {
+
+  var GameManipulator = require('./GameManipulator');
+  var Learner = require('./Learner');
+  var Scanner = require('./Scanner');
+  var UI = require('./UI');
 
 
-// Init Learner
-Learner.init(GameManipulator, UI, 12, 4, 0.2);
+  // Configure Robotjs
+  robot.setMouseDelay(1);
 
 
-// Start reading game state and sensors
-setInterval(GameManipulator.readSensors, 40);
-setInterval(GameManipulator.readGameState, 200);
+  // Initialize Game
+  GameManipulator.findGamePosition();
 
+
+  // Check for found game
+  if (GameManipulator.offset) {
+    // Uncomment this line to debug the
+    // starting point of sensor (Check if it's detecting it correcly)
+
+    // robot.moveMouse(GameManipulator.offset[0]+GameManipulator.sensors[0].offset[0],
+    //    GameManipulator.offset[1] + GameManipulator.sensors[0].offset[1]);
+
+    robot.moveMouse(GameManipulator.offset[0], GameManipulator.offset[1]);
+  } else {
+    console.error('FAILED TO FIND GAME!');
+    process.exit();
+  }
+
+
+  // Initialize UI
+  UI.init(GameManipulator, Learner);
+
+
+  // Init Learner
+  Learner.init(GameManipulator, UI, 12, 4, 0.2);
+
+
+  // Start reading game state and sensors
+  setInterval(GameManipulator.readSensors, 40);
+  setInterval(GameManipulator.readGameState, 200);
+}
 
 // Start game (Example of API usage)
 /*
